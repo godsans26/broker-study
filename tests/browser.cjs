@@ -50,6 +50,7 @@ async function sync(page) {
     const page=await smoke.newPage();
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base); await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+    await page.locator('.study-card').first().waitFor({state:'visible'});
     check(await page.locator('.study-card').count()===2,'two banks');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile home fits');
     await page.locator('a[href="practice.html"]').click();
@@ -69,7 +70,7 @@ async function sync(page) {
     const a=await browser.newContext({serviceWorkers:'block'}), b=await browser.newContext({serviceWorkers:'block'});
     await mock(a);await mock(b);const pa=await a.newPage(),pb=await b.newPage();
     for(const p of [pa,pb]) p.on('pageerror',e=>errors.push(e.message));
-    await pa.goto(base+'practice.html');await pb.goto(base+'practice.html');await login(pa);await login(pb);
+    await pa.goto(base+'practice.html');await pb.goto(base+'practice.html');await login(pa);await login(pb);await sync(pa);
     await pa.locator('.option').nth(0).click();await sync(pa);await sync(pb);
     check(Object.keys((await state(pb)).answers).length===1,'second device receives answer');
     await a.setOffline(true);await pa.locator('#next').click();await pa.locator('.option').nth(1).click();

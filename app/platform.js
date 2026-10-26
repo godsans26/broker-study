@@ -22,6 +22,13 @@
   if (location.protocol === 'file:') { offlineHelp.textContent = '포터블 버전입니다. 압축을 푼 폴더를 그대로 보관하고 index.html을 여세요. 앱 설치와 자동 업데이트는 배포된 웹 주소에서 사용할 수 있습니다.'; return; }
   if (!('serviceWorker' in navigator)) { offlineHelp.textContent = '이 브라우저는 오프라인 설치를 지원하지 않습니다. 최신 Safari 또는 Edge를 이용하세요.'; return; }
   offlineHelp.textContent = '문제와 해설을 오프라인용으로 준비하고 있습니다…';
+  let controlled = Boolean(navigator.serviceWorker.controller), refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    const updating = controlled;
+    controlled = Boolean(navigator.serviceWorker.controller);
+    // First installation can claim the already-loaded page without restarting it.
+    if (updating && !refreshing) { refreshing = true; location.reload(); }
+  });
   navigator.serviceWorker.register(new URL('sw.js', base), {scope: base.pathname, updateViaCache: 'none'}).then(registration => {
     function waiting() {
       if (!registration.waiting || !navigator.serviceWorker.controller) return;
@@ -34,8 +41,6 @@
     }
     waiting(); registration.addEventListener('updatefound', () => { const worker = registration.installing; worker?.addEventListener('statechange', () => { if (worker.state === 'installed') waiting(); if (worker.state === 'redundant') offlineHelp.textContent = '오프라인 준비를 완료하지 못했습니다. 인터넷에 연결한 뒤 다시 열어 주세요.'; }); });
     navigator.serviceWorker.ready.then(() => { offlineHelp.textContent = '문제와 해설의 오프라인 준비가 끝났습니다. 인터넷 없이도 앱을 다시 열 수 있습니다.'; });
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!refreshing) { refreshing = true; location.reload(); } });
     window.addEventListener('online', () => registration.update().catch(() => {}));
     document.addEventListener('visibilitychange', () => { if (!document.hidden) registration.update().catch(() => {}); });
   }).catch(() => { offlineHelp.textContent = '오프라인 준비에 실패했습니다. HTTPS 주소와 브라우저 저장 공간을 확인한 뒤 다시 열어 주세요.'; });
