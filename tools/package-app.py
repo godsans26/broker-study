@@ -32,7 +32,13 @@ def grading_version(questions, past=False):
     for q in questions:
         current = {**q, **q.get('current', {})} if past and q['law']['status'] == 'revised' else q
         keys = ['stem', 'options', 'answers' if past else 'answer']
-        grading.append([q['id'], *[q[k] for k in keys], *[current[k] for k in keys]])
+        def value(v, key):
+            # This PDF superscript repair changes typography, not the grading scope.
+            # Keep the established cloud record key for this one verified formula.
+            if past and q['id'] == '2025-0-39' and key == 'options':
+                return [option.replace('(1+0.03)⁵', '(1+0.03)5') for option in v[key]]
+            return v[key]
+        grading.append([q['id'], *[value(q,k) for k in keys], *[value(current,k) for k in keys]])
     return hashlib.sha256(json.dumps(grading, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:20]
 
 config = json.loads(read(APP / 'cloud-config.json'))
