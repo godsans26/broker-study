@@ -36,8 +36,8 @@ def grading_version(questions, past=False):
     return hashlib.sha256(json.dumps(grading, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:20]
 
 config = json.loads(read(APP / 'cloud-config.json'))
-config['url'] = os.environ.get('SUPABASE_URL', config.get('url', ''))
-config['publishableKey'] = os.environ.get('SUPABASE_PUBLISHABLE_KEY', config.get('publishableKey', ''))
+config['url'] = os.environ.get('SUPABASE_URL') or config.get('url', '')
+config['publishableKey'] = os.environ.get('SUPABASE_PUBLISHABLE_KEY') or config.get('publishableKey', '')
 if bool(config['url']) != bool(config['publishableKey']): raise ValueError('Both Supabase URL and public key are required')
 if config['url']:
     assert re.fullmatch(r'https://[a-z0-9-]+\.supabase\.co/?', config['url']), 'Invalid Supabase URL'
