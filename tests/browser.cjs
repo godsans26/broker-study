@@ -66,6 +66,22 @@ async function sync(page) {
     await page.reload();check(await page.locator('#feedback').isVisible(),'offline past reload');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile past fits');
     await smoke.setOffline(false);
+    // Exam periods follow source volumes: common / non-life I / non-life II.
+    for (const session of ['1','2','3']) {
+      const result=await page.evaluate(session=>{
+        writeForm({...defaults,session});apply();
+        return {count:state.order.length,parts:[...new Set(state.order.map(id=>byId.get(id).part))],subjects:[...$('part').options].map(o=>o.value)};
+      },session);
+      check(result.count===360 && result.parts.join()===String(Number(session)-1),'correct questions for period '+session);
+      check(result.subjects.join()===['all',String(Number(session)-1)].join(),'dependent subject filter '+session);
+      check(await page.locator('#session-badge').textContent()===session+'교시','period badge '+session);
+    }
+    const migrated=await page.evaluate(()=>{
+      const old={...fresh(),filters:{...defaults,session:'2',part:'2'},order:['2025-2-19'],position:0,answers:{original:{'2025-2-19':3},current:{}},flags:['2025-2-19']};
+      const local=compatibleState(old),cloud=StudyAdapter.materialize(StudyAdapter.flatten(old));
+      return [local,cloud].every(s=>valid(s)&&s.filters.session==='3'&&s.order[0]==='2025-2-19'&&s.answers.original['2025-2-19']===3&&s.flags[0]==='2025-2-19');
+    });
+    check(migrated,'old local and cloud period filters migrate without losing progress');
     // Verify the supplied 35-question supplement and historical grading boundary.
     const supplement = await page.evaluate(() => ({count:questions.filter(q=>q.supplementReview).length,pending:questions.filter(q=>q.law.status==='pending').length,historical:questions.filter(q=>q.law.status==='historical').map(q=>q.id),historicalModern:modern(byId.get('2021-2-36'))}));
     check(supplement.count===35 && supplement.pending===0,'35 questions supplemented');

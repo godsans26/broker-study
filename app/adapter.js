@@ -27,6 +27,7 @@
         if (!past && mode === 'practice') next.answers[id] = value;
       } else if (key.startsWith('flag:') && value === true && byId.has(key.slice(5))) next[past ? 'flags' : 'uncertain'].push(key.slice(5));
     }
+    if (past) next = compatibleState(next);
     if (!(past ? valid(next) : validState(next))) throw new Error('이 버전의 문제집과 맞지 않는 기록입니다. JSON 백업을 보관해 주세요.');
     return next;
   }
