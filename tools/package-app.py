@@ -35,6 +35,9 @@ def grading_version(questions, past=False):
         def value(v, key):
             # This PDF superscript repair changes typography, not the grading scope.
             # Keep the established cloud record key for this one verified formula.
+            # The supplied question sheet fixes a typo without changing its meaning.
+            if past and q['id'] == '2025-1-25' and key == 'options':
+                return [option.replace('점검', '검검') for option in v[key]]
             if past and q['id'] == '2025-0-39' and key == 'options':
                 return [option.replace('(1+0.03)⁵', '(1+0.03)5') for option in v[key]]
             return v[key]

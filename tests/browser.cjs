@@ -66,6 +66,21 @@ async function sync(page) {
     await page.reload();check(await page.locator('#feedback').isVisible(),'offline past reload');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile past fits');
     await smoke.setOffline(false);
+    // Verify the supplied 35-question supplement and historical grading boundary.
+    const supplement = await page.evaluate(() => ({count:questions.filter(q=>q.supplementReview).length,pending:questions.filter(q=>q.law.status==='pending').length,historical:questions.filter(q=>q.law.status==='historical').map(q=>q.id),historicalModern:modern(byId.get('2021-2-36'))}));
+    check(supplement.count===35 && supplement.pending===0,'35 questions supplemented');
+    check(supplement.historical.join()==='2021-2-36' && !supplement.historicalModern,'historical premise excluded from current mode');
+    for(const [id,choice] of [['2017-2-39',1],['2017-2-39',3],['2022-2-04',1],['2022-2-04',3],['2024-0-11',1],['2021-2-36',1]]) {
+      await page.evaluate(({id,choice})=>{state.filters={...defaults};state.order=[id];state.position=0;delete state.answers.original[id];writeForm(state.filters);render();choose(choice);},{id,choice});
+      check(await page.locator('#verdict').textContent()==='정답입니다.','official answer accepted '+id+' '+choice);
+      check(await page.locator('#law-note').isVisible(),'supplement note visible '+id);
+    }
+    check(await page.locator('#mode-badge').textContent()==='출제 당시 기준','historical question labelled');
+    await page.reload();check(await page.locator('#feedback').isVisible(),'supplemented answer persists');
+    await page.evaluate(()=>$('coverage-open').click());
+    check((await page.locator('#coverage-summary').textContent()).includes('확인 미완료 0문항'),'coverage separates historical from pending');
+    await page.locator('[data-close="coverage-dialog"]').click();
+
     await openMenu(page);const badConfig=page.locator('#study-account-open');await badConfig.click();
     await page.locator('#study-cloud-url').fill('https://study-test.supabase.co');await page.locator('#study-cloud-key').fill('sb_secret_should_never_be_used');
     await page.locator('#study-config-form button').click();check((await page.locator('#study-account-message').textContent()).includes('공개용'),'secret rejected');await page.locator('#study-account-close').click();
