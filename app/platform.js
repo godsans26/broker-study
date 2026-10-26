@@ -5,6 +5,30 @@
   const bar = document.createElement('nav'); bar.className = 'study-bar'; bar.setAttribute('aria-label', '학습실');
   bar.innerHTML = '<a class="study-home-link">← 학습실</a><div class="study-tools"><span id="study-connection" class="study-dot" role="status"></span><button type="button" id="study-update" hidden>새 버전 적용</button><button type="button" data-open-install>설치·도움말</button><button type="button" id="study-account-open">동기화</button></div>';
   bar.querySelector('a').href = new URL('index.html', base).href; document.body.prepend(bar);
+  const menuButton = document.createElement('button');
+  menuButton.id = 'study-menu-toggle'; menuButton.type = 'button';
+  menuButton.textContent = '☰'; menuButton.setAttribute('aria-label', '학습 메뉴');
+  menuButton.setAttribute('aria-controls', 'study-menu'); menuButton.setAttribute('aria-expanded', 'false');
+  const menu = document.createElement('section'); menu.id = 'study-menu'; menu.hidden = true;
+  menu.setAttribute('aria-label', '학습 메뉴');
+  menu.append(bar.querySelector('.study-tools')); bar.append(menuButton); bar.after(menu);
+  const quizHeader = document.querySelector('main > header');
+  if (quizHeader) {
+    document.body.classList.add('study-compact');
+    menu.append(quizHeader);
+    const transfer = document.querySelector('main > .study-tools');
+    if (transfer) menu.append(transfer);
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) menu.append(sidebar);
+  }
+  function setMenu(open) {
+    menu.hidden = !open; menuButton.setAttribute('aria-expanded', String(open));
+  }
+  menuButton.onclick = () => setMenu(menu.hidden);
+  menu.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { setMenu(false); menuButton.focus(); }
+  });
+  document.getElementById('apply-filters')?.addEventListener('click', () => setMenu(false));
   const help = document.createElement('dialog'); help.className = 'study-dialog'; help.id = 'study-install'; help.setAttribute('aria-labelledby', 'study-install-title');
   help.innerHTML = '<header><h2 id="study-install-title">설치·오프라인 사용</h2><button type="button" data-dismiss>닫기</button></header><p><b>아이폰</b><br>Safari에서 이 주소를 열고 공유 → 홈 화면에 추가 → 웹 앱으로 열기를 선택하세요.</p><p><b>맥북</b><br>Safari → 파일 → Dock에 추가(macOS Sonoma 14 이상).</p><p><b>윈도우</b><br>Edge 주소창의 앱 설치 버튼을 누르세요.</p><button type="button" id="study-install-button" class="study-primary" hidden>이 기기에 설치</button><p id="study-offline-help" class="study-message" role="status"></p><p class="study-note">오프라인에서는 저장된 문제와 해설을 사용할 수 있습니다. 외부 근거 링크·원문 PDF 열기와 새 버전 다운로드에는 인터넷이 필요할 수 있습니다. 브라우저 저장 공간을 지우면 다운로드와 기록이 사라질 수 있으므로 JSON 백업도 보관하세요.</p><p class="study-note" id="study-build"></p>';
   document.body.append(help);

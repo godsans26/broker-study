@@ -28,8 +28,9 @@ async function mock(context) {
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(response)});
   });
 }
+async function openMenu(page) { if (await page.locator('#study-menu').isHidden()) await page.locator('#study-menu-toggle').click(); }
 async function login(page,email='learner@example.com') {
-  await page.locator('#study-account-open').click();
+  await openMenu(page);await page.locator('#study-account-open').click();
   await page.locator('#study-email').fill(email);await page.locator('#study-password').fill('test-password-123');
   await page.locator('#study-login button[type=submit]').click();
   await page.locator('#study-signed-in').waitFor({state:'visible'});
@@ -37,7 +38,7 @@ async function login(page,email='learner@example.com') {
   await page.waitForFunction(()=>document.getElementById('study-account-open').textContent==='동기화 완료');
 }
 async function sync(page) {
-  await page.locator('#study-account-open').click();await page.locator('#study-sync-now').click();
+  await openMenu(page);await page.locator('#study-account-open').click();await page.locator('#study-sync-now').click();
   await page.waitForFunction(()=>document.getElementById('study-account-open').textContent==='동기화 완료');
   await page.locator('#study-account-close').click();
 }
@@ -52,8 +53,10 @@ async function sync(page) {
     await page.goto(base); await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
     await page.locator('.study-card').first().waitFor({state:'visible'});
     check(await page.locator('.study-card').count()===2,'two banks');
+    check(await page.locator('#study-menu').isHidden(),'secondary controls initially hidden');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile home fits');
     await page.locator('a[href="practice.html"]').click();
+    check(await page.locator('#study-menu').isHidden(),'quiz starts with closed menu');
     await page.locator('.option').nth(0).click();
     check(Object.keys((await state(page)).answers).length===1,'answer stored locally');
     const before=await state(page);await page.reload();check(M.same(before,await state(page)),'reload preserves answer');
@@ -63,7 +66,7 @@ async function sync(page) {
     await page.reload();check(await page.locator('#feedback').isVisible(),'offline past reload');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile past fits');
     await smoke.setOffline(false);
-    const badConfig=page.locator('#study-account-open');await badConfig.click();
+    await openMenu(page);const badConfig=page.locator('#study-account-open');await badConfig.click();
     await page.locator('#study-cloud-url').fill('https://study-test.supabase.co');await page.locator('#study-cloud-key').fill('sb_secret_should_never_be_used');
     await page.locator('#study-config-form button').click();check((await page.locator('#study-account-message').textContent()).includes('공개용'),'secret rejected');await page.locator('#study-account-close').click();
     await page.screenshot({path:'test-results/mobile.png',fullPage:true});await smoke.close();
@@ -80,7 +83,7 @@ async function sync(page) {
     pa.once('dialog',d=>d.accept());await pa.locator('#restart').click();await sync(pa);await sync(pb);
     check(Object.keys((await state(pb)).answers).length===0,'reset propagates tombstones');
     await pa.locator('.option').nth(3).click();await sync(pa);
-    await pa.locator('#study-account-open').click();pa.once('dialog',d=>d.accept());await pa.locator('#study-sign-out').click();
+    await openMenu(pa);await pa.locator('#study-account-open').click();pa.once('dialog',d=>d.accept());await pa.locator('#study-sign-out').click();
     await pa.locator('#study-login').waitFor({state:'visible'});await pa.locator('#study-account-close').click();
     check(Object.keys((await state(pa)).answers).length===0,'logout restores guest instead of leaking account');
     await login(pa,'other@example.com');check(Object.keys((await state(pa)).answers).length===0,'other account isolated');
