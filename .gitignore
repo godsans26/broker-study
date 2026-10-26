@@ -1,0 +1,15 @@
+node_modules/
+dist/
+releases/
+tmp/
+test-results/
+publish/
+publish-public/
+*.pdf
+.env*
+!.env.example
+*.log
+__pycache__/
+verification*.png
+verification.json
+기출전용/tools/qa-*

@@ -1,0 +1,88 @@
+name: Deploy study app
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: study-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: study_test_only
+          POSTGRES_DB: study_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: psql -h 127.0.0.1 -U postgres -d study_test -f tests/database.sql
+        env:
+          PGPASSWORD: study_test_only
+      - run: npm run build
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+      - run: npx playwright install --with-deps chromium webkit
+      - run: mkdir -p test-results && npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-test-results
+          path: test-results/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: broker-study-portable
+          path: releases/broker-study-portable.zip
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
+  portable:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: broker-study-portable
+      - name: Publish portable download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          tag="build-${COMMIT:0:12}"
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --target "$COMMIT" --title "학습실 ${COMMIT:0:12}" --notes "포터블 ZIP을 내려받아 압축을 풀고 index.html을 여세요."
+          gh release upload "$tag" broker-study-portable.zip --clobber

@@ -1,0 +1,12 @@
+{
+  "name": "broker-study",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "python tools/package-app.py",
+    "test": "node --test tests/sync.test.cjs",
+    "test:browser": "node tests/browser.cjs"
+  },
+  "dependencies": { "@supabase/supabase-js": "2.118.0" },
+  "devDependencies": { "@playwright/test": "1.56.1" }
+}
