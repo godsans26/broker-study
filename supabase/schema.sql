@@ -55,5 +55,7 @@ begin
 end;
 $$;
 revoke all on function public.merge_study_progress(text,jsonb) from public;
+-- Supabase also grants anon EXECUTE directly through its default privileges.
+revoke all on function public.merge_study_progress(text,jsonb) from anon;
 grant execute on function public.merge_study_progress(text,jsonb) to authenticated;
 commit;

@@ -7,6 +7,8 @@ create function auth.uid() returns uuid language sql stable as $$ select nullif(
 grant usage on schema auth to authenticated, anon;
 grant execute on function auth.uid() to authenticated, anon;
 insert into auth.users values ('11111111-1111-4111-8111-111111111111'), ('22222222-2222-4222-8222-222222222222');
+-- Reproduce Supabase's direct default function grants, not only PostgreSQL PUBLIC.
+alter default privileges in schema public grant execute on functions to anon, authenticated;
 \i supabase/schema.sql
 begin;
 set local role authenticated;
