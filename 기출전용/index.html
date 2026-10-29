@@ -69,7 +69,7 @@ function compatibleState(s){
  return s;
 }
 function textbookLabel(r){return `${r.title} · ${r.part}부 PDF ${r.pdfPage}쪽${r.question?` · ${r.question}번`:' · 본문 설명'}`;}
-function load(){try{const raw=localStorage.getItem(storageKey);if(raw){const previous=JSON.parse(raw),parsed=compatibleState(previous);if(valid(parsed)){if(previous.version!==parsed.version)message('교재 해설을 보강했습니다. 기존 풀이 기록은 유지됩니다.');return parsed;}message('이전 문제집과 데이터 버전이 달라 새 기록으로 시작했습니다. 기존 파일로 내보낸 기록은 보관해 주세요.');}}catch{storageWarning();}return fresh();}
+function load(){try{const raw=localStorage.getItem(storageKey);if(raw){const previous=JSON.parse(raw),parsed=compatibleState(previous);if(valid(parsed)){return parsed;}message('이전 문제집과 데이터 버전이 달라 새 기록으로 시작했습니다. 기존 파일로 내보낸 기록은 보관해 주세요.');}}catch{storageWarning();}return fresh();}
 function save(){if(canSave)try{localStorage.setItem(storageKey,JSON.stringify(state));}catch{storageWarning();}}
 function message(text){$('message').textContent=text;$('message').hidden=false;}
 let state=load();
