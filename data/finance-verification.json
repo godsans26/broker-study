@@ -1,0 +1,11 @@
+{
+  "questions": 50,
+  "answerTableMatches": 50,
+  "explanationMatches": 50,
+  "nonWhitespaceContentPreserved": true,
+  "sources": {
+    "세제재무설계_예상문제_10회분_문제지.pdf": "7bfb60812d7fef44de5a537f689e4b36c4e0d23b566ba91c86c0e369d9f40a9c",
+    "세제재무설계_예상문제_10회분_정답표.pdf": "8b34f738ccb6dc420eeb76c96cb26ebff242c2b6e5fe0f2e69c4719d4584960d",
+    "세제재무설계_예상문제_10회분_해설지.pdf": "f3cf36d5c59fee3f6cd538681c204f06bc80fa478326652646246c8a96382022"
+  }
+}

@@ -52,7 +52,7 @@ async function sync(page) {
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base); await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
     await page.locator('.study-card').first().waitFor({state:'visible'});
-    check(await page.locator('.study-card').count()===2,'two banks');
+    check(await page.locator('.study-card').count()===3,'three banks');
     check(await page.locator('#study-menu').isHidden(),'secondary controls initially hidden');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile home fits');
     await page.locator('a[href="practice.html"]').click();
@@ -60,7 +60,31 @@ async function sync(page) {
     await page.locator('.option').nth(0).click();
     check(Object.keys((await state(page)).answers).length===1,'answer stored locally');
     const before=await state(page);await page.reload();check(M.same(before,await state(page)),'reload preserves answer');
-    await smoke.setOffline(true);await page.goto(base+'past/index.html');
+    const liabilityId=await page.evaluate(()=>StudyAdapter.id);
+    await smoke.setOffline(true);await page.goto(base);
+    await page.locator('a[href="finance.html"]').click();
+    check(await page.evaluate(()=>questions.length===50 && new Set(questions.map(q=>q.id)).size===50),'50 unique finance questions available offline');
+    check(await page.evaluate(()=>Object.keys(state.answers).length===0),'finance starts independently');
+    check(await page.evaluate(()=>StudyAdapter.id)!==liabilityId,'finance cloud bucket is separate');
+    check(await page.locator('#feedback').isHidden(),'finance answer hidden before answering');
+    await page.locator('#uncertain').check();
+    check(await page.locator('#feedback').isHidden(),'uncertain marker does not reveal finance answer');
+    for(let i=0;i<50;i++) {
+      const q=await page.evaluate(()=>byId.get(state.order[state.position]));
+      check(JSON.stringify(await page.locator('.choice-text').allTextContents())===JSON.stringify(q.options),'finance option order '+q.id);
+      await page.locator('.option').nth(q.answer).click();
+      check(await page.locator('#verdict').textContent()==='정답입니다.','finance grading '+q.id);
+      check(await page.locator('#explanation').textContent()===q.explanation,'finance explanation '+q.id);
+      if(i<49) await page.locator('#next').click();
+    }
+    check(await page.locator('#summary').isVisible(),'finance all 50 completed');
+    await page.reload();
+    check(await page.evaluate(()=>Object.keys(state.answers).length===50 && state.uncertain.length===1),'finance progress survives offline reload');
+    check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile finance fits');
+    await page.screenshot({path:'test-results/finance-mobile.png',fullPage:true});
+    await page.goto(base+'practice.html');
+    check(M.same(before,await state(page)),'finance does not modify existing liability progress');
+    await page.goto(base+'past/index.html');
     check(await page.locator('.option').count()===4,'uncached navigation uses precached past bank offline');
     await page.locator('.option').nth(0).click();check(await page.locator('#feedback').isVisible(),'past grading offline');
     await page.reload();check(await page.locator('#feedback').isVisible(),'offline past reload');

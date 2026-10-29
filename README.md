@@ -1,6 +1,6 @@
 # 손해보험중개사 학습실
 
-예상문제 150개와 9개년 기출 1,080개를 iPhone·Mac·Windows에서 사용하는 설치형 웹앱(PWA)과 포터블 HTML 앱입니다.
+예상문제 200개(배상·특종·보증 150개, 세제·재무설계 50개)와 9개년 기출 1,080개를 iPhone·Mac·Windows에서 사용하는 설치형 웹앱(PWA)과 포터블 HTML 앱입니다.
 
 - 웹앱: https://godsans26.github.io/broker-study/
 - 포터블: https://github.com/godsans26/broker-study/releases/latest/download/broker-study-portable.zip
