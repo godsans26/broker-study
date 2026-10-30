@@ -52,7 +52,7 @@ async function sync(page) {
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base); await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
     await page.locator('.study-card').first().waitFor({state:'visible'});
-    check(await page.locator('.study-card').count()===3,'three banks');
+    check(await page.locator('.study-card').count()===4,'four banks');
     check(await page.locator('#study-menu').isHidden(),'secondary controls initially hidden');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile home fits');
     await page.locator('a[href="practice.html"]').click();
@@ -82,6 +82,32 @@ async function sync(page) {
     check(await page.evaluate(()=>Object.keys(state.answers).length===50 && state.uncertain.length===1),'finance progress survives offline reload');
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile finance fits');
     await page.screenshot({path:'test-results/finance-mobile.png',fullPage:true});
+    const financeId=await page.evaluate(()=>StudyAdapter.id);
+    const financeBefore=await page.evaluate(()=>JSON.stringify(state));
+    await page.goto(base);
+    await page.locator('a[href="risk.html"]').click();
+    check(await page.evaluate(()=>questions.length===50 && new Set(questions.map(q=>q.id)).size===50),'50 unique risk questions available offline');
+    check(await page.evaluate(()=>Object.keys(state.answers).length===0),'risk starts independently');
+    check(await page.evaluate(()=>StudyAdapter.id)!==liabilityId,'risk cloud bucket is separate');
+    check(await page.locator('#feedback').isHidden(),'risk answer hidden before answering');
+    await page.locator('#uncertain').check();
+    check(await page.locator('#feedback').isHidden(),'uncertain marker does not reveal risk answer');
+    for(let i=0;i<50;i++) {
+      const q=await page.evaluate(()=>byId.get(state.order[state.position]));
+      check(JSON.stringify(await page.locator('.choice-text').allTextContents())===JSON.stringify(q.options),'risk option order '+q.id);
+      await page.locator('.option').nth(q.answer).click();
+      check(await page.locator('#verdict').textContent()==='정답입니다.','risk grading '+q.id);
+      check(await page.locator('#explanation').textContent()===q.explanation,'risk explanation '+q.id);
+      if(i<49) await page.locator('#next').click();
+    }
+    check(await page.locator('#summary').isVisible(),'risk all 50 completed');
+    await page.reload();
+    check(await page.evaluate(()=>Object.keys(state.answers).length===50 && state.uncertain.length===1),'risk progress survives offline reload');
+    check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile risk fits');
+    await page.screenshot({path:'test-results/risk-mobile.png',fullPage:true});
+    check(await page.evaluate(()=>StudyAdapter.id)!==financeId,'risk and finance cloud buckets separate');
+    await page.goto(base+'finance.html');
+    check(await page.evaluate(()=>JSON.stringify(state))===financeBefore,'risk preserves finance progress');
     await page.goto(base+'practice.html');
     check(M.same(before,await state(page)),'finance does not modify existing liability progress');
     await page.goto(base+'past/index.html');

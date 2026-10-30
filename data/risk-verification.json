@@ -1,0 +1,11 @@
+{
+  "questions": 50,
+  "answerTableMatches": 50,
+  "explanationMatches": 50,
+  "nonWhitespaceContentPreserved": true,
+  "sources": {
+    "위험관리론_예상문제_10회분_문제지.pdf": "3f798d71c2d6f9f629c2829b9b3ad0e6e8cf1ab0b6772e039dad913ec554281f",
+    "위험관리론_예상문제_10회분_정답표.pdf": "03e61064deb46ce02b4ed701f8ea1d23013b235a7de8f176ec80466a8ab3551f",
+    "위험관리론_예상문제_10회분_해설지.pdf": "2737d2f949d5090ba7417e6da67ea3e6a88f754ff38b134530cb6ab32cc7b410"
+  }
+}
