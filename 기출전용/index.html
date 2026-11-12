@@ -7,6 +7,11 @@
 #stem{word-break:keep-all}
 #conditions{white-space:pre-line;font-size:15px;line-height:1.9;color:#3d4a35;background:#f5f7f1;border:1px solid #e0e7d9;border-radius:9px;padding:17px 19px;margin:0 0 23px;overflow-wrap:anywhere}
 #stem-note{display:inline-block;max-width:100%;margin-inline-start:.65em;font-size:14px;font-weight:400;line-height:1.7;letter-spacing:0;color:#647064;white-space:normal;vertical-align:baseline;word-break:keep-all;overflow-wrap:anywhere}#stem-note.below{display:block;margin:5px 0 0}
+
+#conditions.exam-items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 22px;background:#fff;border:1px solid #65735f;border-radius:0;padding:16px 20px;max-width:760px;color:#202020;font-weight:500;white-space:normal}
+#conditions.exam-items .exam-item{display:flex;gap:8px;align-items:baseline;word-break:keep-all}
+#conditions.exam-items .exam-letter{flex-shrink:0}
+@media(max-width:600px){#conditions.exam-items{grid-template-columns:1fr;gap:8px;padding:14px 16px}}
 </style></head><body><main class="wrap">
 <header class="top"><div><p class="eyebrow">STUDY / 손해보험중개사</p><h1 class="title">기출, 한 문제씩.</h1><p class="muted" id="bank-info">2017–2025 · 9개년 기출연습</p></div><div class="top-actions"><button class="quiet" id="export-progress">기록 내보내기</button><button class="quiet" id="import-progress">기록 불러오기</button><input type="file" id="import-file" accept=".json,application/json" hidden></div></header>
 <p id="message" class="notice" role="status" hidden></p><p id="storage-warning" class="notice" role="status" hidden></p>
@@ -110,7 +115,17 @@ function layoutStemNote(){
  const noteWidth=[...noteRange.getClientRects()].reduce((width,r)=>width+r.width,0);
  note.classList.toggle('below',lines.size>1||(rects[0]?.width||0)+noteWidth+16>$('stem').clientWidth);
 }
-function renderStem(text){
+function renderStem(text,questionId){
+ $('conditions').classList.remove('exam-items');
+ if(questionId==='2021-1-07'){
+  const boundary=text.indexOf('가.');
+  const prompt=text.slice(0,boundary).replace('자동차손해\n배상책임','자동차손해배상책임').replace(/\s+/g,' ').trim();
+  const items=text.slice(boundary).match(/[가나다라마]\.\s*[^가나다라마]+?(?=\s+[가나다라마]\.|$)/g);
+  $('stem').replaceChildren();const span=node('span',prompt);span.id='stem-main';$('stem').append(span);
+  $('conditions').replaceChildren();$('conditions').hidden=false;$('conditions').classList.add('exam-items');
+  for(const item of items){const row=node('div',undefined,'exam-item');row.append(node('span',item.slice(0,2),'exam-letter'),node('span',item.slice(2).trim()));$('conditions').append(row);}
+  return;
+ }
  const split=text.indexOf('?'),tail=split>=0?text.slice(split+1).trim():'';
  const compact=tail.replace(/\s+/g,' ').trim();
  const isNote=compact.length<=180&&/^[（(][^()（）]+[）)]$/.test(compact);
@@ -129,7 +144,7 @@ function render(){
  if(!ids.length){previewCount();return;}
  const q=byId.get(ids[state.position]),v=view(q),chosen=answers[q.id];
  $('session-badge').textContent=`${q.session}교시`;$('type-badge').textContent=`${q.category} - ${q.topic}`;$('mode-badge').textContent=q.law.status==='historical'?'출제 당시 기준':mode==='current'?(q.law.status==='revised'?'현행 수정':q.law.status==='textbook'?'교재 기준':'현행 기준'):'기출 원문';$('question-info').textContent=`${q.year}년 · 제${q.round}회 · ${q.subject} · ${q.number}번`;
- renderStem(v.stem);
+ renderStem(v.stem,q.id);
  $('flag').checked=state.flags.includes(q.id);$('figure-details').hidden=!q.figure||(mode==='current'&&q.law.status==='revised');$('figure-details').open=false;if(q.figure)$('figure').src=q.figure;else $('figure').removeAttribute('src');
  $('options').replaceChildren();v.options.forEach((text,i)=>{const b=node('button',undefined,'option');b.disabled=chosen!==undefined;b.setAttribute('aria-label',`${symbols[i]} ${text}`);b.append(node('span',String(i+1),'number'),node('span',text.replace(/\n/g,' '),'option-text'));if(chosen!==undefined){if(v.answers.includes(i)){b.classList.add('correct');b.append(node('span',i===chosen?'내 답 · 정답':'정답','option-label'));}else if(i===chosen){b.classList.add('wrong');b.append(node('span','내 답','option-label'));}}b.addEventListener('click',()=>choose(i));$('options').append(b);});
  $('feedback').hidden=chosen===undefined;$('answer-source').hidden=chosen===undefined;
